@@ -83,9 +83,9 @@ class JsonTests {
         """.trimIndent())
 
         val expectedOutput = mapOf(
-            "integrations_0_value" to "0",
-            "integrations_1_value" to "1",
-            "integrations_2_value" to "2"
+            "0_value" to "0",
+            "1_value" to "1",
+            "2_value" to "2"
         )
 
         Assert.assertEquals(expectedOutput, input.flatten())
