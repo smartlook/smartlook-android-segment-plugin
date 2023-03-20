@@ -1,16 +1,16 @@
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.5.21'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.7.10'
 }
 
 android {
-    compileSdkVersion 32
+    compileSdkVersion 33
     buildToolsVersion "30.0.3"
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 32
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
 
@@ -52,18 +52,14 @@ dependencies {
         maven { url 'https://jitpack.io' }
     }
     implementation "com.segment.analytics.kotlin:android:1.7.0"
-    implementation "com.smartlook.android:smartlook-analytics:2.0.0"
+    implementation "com.smartlook.android:smartlook-analytics:2.2.0"
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation "androidx.core:core-ktx:1.8.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.20"
+    implementation "androidx.core:core-ktx:1.9.0"
 
-    testImplementation "io.mockk:mockk:1.12.4"
+    testImplementation "io.mockk:mockk:1.13.2"
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-
-    // Add Roboelectric dependencies.
-    testImplementation 'org.robolectric:robolectric:4.8'
-    testImplementation 'androidx.test:core:1.4.0'
 
     // Add JUnit4 legacy dependencies.
     testImplementation 'junit:junit:4.13.2'
