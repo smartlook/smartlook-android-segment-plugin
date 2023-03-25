@@ -6,7 +6,7 @@ plugins {
 apply("$rootDir/gradle/mavenPublish.gradle")
 
 ext {
-    set("mavenArtifactId", "smartlook-analytics-segment")
+    set("mavenArtifactId", "smartlook-segment")
     set("mavenVersion", Configurations.sdkVersionName)
 }
 
