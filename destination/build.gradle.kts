@@ -55,7 +55,7 @@ android {
 }
 
 dependencies {
-    implementation("com.segment.analytics.kotlin:android:1.7.0")
+    implementation("com.segment.analytics.kotlin:android:1.10.3")
     implementation("com.smartlook.android:smartlook-analytics:2.2.2")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.7.20")
