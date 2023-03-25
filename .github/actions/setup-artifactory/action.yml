@@ -1,0 +1,15 @@
+name: 'Setup artifactory credentials'
+description: ''
+inputs:
+  username:
+    description: "Artifactory username"
+    required: true
+  password:
+    description: "Artifactory password"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - run: mkdir -p ~/.gradle && echo -e "sl_artifactory_username=${{ inputs.username }}\nsl_artifactory_password=${{ inputs.password }}" >> ~/.gradle/gradle.properties
+      shell: bash

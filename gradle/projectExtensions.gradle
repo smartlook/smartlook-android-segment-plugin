@@ -1,0 +1,23 @@
+/**
+ * Retrieves a value from the Project's properties, or returns the given defaultValue if the
+ * property is not set or is null.
+ * Based on the Type of `defaultValue`, it tries to parse the value into one of Java's Primitive
+ * types, else it returns it as a String.
+ */
+Project.metaClass.propOrDefault = { propertyName, defaultValue ->
+    def value = delegate.hasProperty(propertyName) ? delegate.properties[propertyName] : null
+    if (value != null) {
+        switch (defaultValue) {
+            case Boolean: return Boolean.parseBoolean(value.toString())
+            case Byte: return Byte.parseByte(value.toString())
+            case Short: return Short.parseShort(value.toString())
+            case Integer: return Integer.parseInt(value.toString())
+            case Long: return Long.parseLong(value.toString())
+            case Float: return Float.parseFloat(value.toString())
+            case Double: return Double.parseDouble(value.toString())
+            default: return value.toString()
+        }
+    } else {
+        return defaultValue
+    }
+}

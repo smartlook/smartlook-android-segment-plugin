@@ -1,0 +1,34 @@
+apply from: rootProject.file("gradle/mavenBase.gradle")
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+
+                groupId "com.smartlook.android"
+                artifactId project.getMavenArtifactId()
+                version "${project.getMavenVersion()}${project.getVersionPostfix()}"
+            }
+        }
+
+        repositories {
+            maven {
+                name = "artifactory"
+                url "https://artifactory.ci.smartlook.cloud/artifactory/libs-release-local"
+
+                credentials {
+                    username = project.findProperty("sl_artifactory_username")
+                    password = project.findProperty("sl_artifactory_password")
+                }
+            }
+            maven {
+                name = "local"
+                url = uri("$projectDir/repo")
+            }
+        }
+    }
+
+    publish.finalizedBy moveMapping
+}
+

@@ -1,0 +1,57 @@
+name: 'Slack Notification'
+description: ''
+inputs:
+  slack-channel:
+    required: true
+  slack-webhook-url:
+    required: true
+  color:
+    required: true
+  title-text:
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Slack notification
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: ${{ env.SLACK_CHANNEL }}
+        payload: |
+          {
+              "attachments": [
+                {
+                  "color": "${{ inputs.color }}",
+                  "blocks": [
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "${{ github.workflow }} (${{ github.run_number }}) ${{ inputs.title-text }}",
+                        "emoji": true
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "fields": [
+                        {
+                          "type": "mrkdwn",
+                          "text": "*Repository:*\n ${{ github.repository }}"
+                        },
+                        {
+                          "type": "mrkdwn",
+                          "text": "*Release version:*\n ${{ github.event.inputs.release-version }}"
+                        },
+                        {
+                          "type": "mrkdwn",
+                          "text": "*Action URL:*\n ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook-url }}
+        SLACK_CHANNEL: ${{ inputs.slack-channel }}
+        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
