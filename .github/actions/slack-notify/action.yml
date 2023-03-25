@@ -39,6 +39,10 @@ runs:
                         },
                         {
                           "type": "mrkdwn",
+                          "text": "*Repository URL:*\n ${{ github.repositoryUrl }}"
+                        },
+                        {
+                          "type": "mrkdwn",
                           "text": "*Release version:*\n ${{ github.event.inputs.release-version }}"
                         },
                         {
