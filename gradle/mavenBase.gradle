@@ -1,0 +1,52 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+apply plugin: "maven-publish"
+
+Project.metaClass.getMavenArtifactId = { -> delegate.properties["mavenArtifactId"] }
+Project.metaClass.getMavenVersion = { -> delegate.properties["mavenVersion"] }
+
+/**
+ * A function to run on a collection of dependencies, which fills the dependency section of the
+ * pom.xml.
+ * The xml node containing the dependencies is expected as the second parameter.
+ */
+ext.processMavenDependencies = { dependency, isApi, dependenciesNode, versionSuffix ->
+    def scope = isApi ? "compile" : "runtime"
+    if (dependency instanceof ExternalDependency) {
+        def dependencyNode = dependenciesNode.appendNode("dependency")
+        dependencyNode.appendNode("groupId", dependency.group)
+        dependencyNode.appendNode("artifactId", dependency.name)
+        dependencyNode.appendNode("version", dependency.version)
+        if (!dependency.artifacts.isEmpty()) {
+            dependencyNode.appendNode("classifier", dependency.artifacts[0].classifier)
+        }
+        dependencyNode.appendNode("scope", scope)
+    } else if (dependency instanceof ProjectDependency) {
+        def dependencyNode = dependenciesNode.appendNode("dependency")
+        dependencyNode.appendNode("groupId", "com.smartlook.android")
+        dependencyNode.appendNode("artifactId", dependency.dependencyProject.getMavenArtifactId())
+        dependencyNode.appendNode("version", dependency.dependencyProject.getMavenVersion() + versionSuffix)
+        dependencyNode.appendNode("scope", scope)
+    }
+}
+
+tasks.register("moveMapping", Copy) {
+    from "$buildDir/outputs/mapping/release/mapping.txt"
+    into "$projectDir/repo/com/smartlook/android/${project.getMavenArtifactId()}/${project.getMavenVersion()}"
+}
+
+String.metaClass.toBoxString = { ->
+    return "║" + delegate.center(98) + "║"
+}
+
+tasks.withType(AbstractPublishToMaven) {
+    doLast {
+        def artifact =  "com.smartlook.android:" +
+                project.getMavenArtifactId() + ":" +
+                project.getMavenVersion()
+        println("╔══════════════════════════════════════════════════════════════════════════════════════════════════╗")
+        println("published".toBoxString())
+        println(artifact.toBoxString())
+        println("╚══════════════════════════════════════════════════════════════════════════════════════════════════╝")
+    }
+}

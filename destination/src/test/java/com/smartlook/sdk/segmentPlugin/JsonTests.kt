@@ -3,7 +3,7 @@ package com.smartlook.sdk.segmentPlugin
 import flatten
 import kotlinx.serialization.json.Json
 import org.junit.Assert
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class JsonTests {
 

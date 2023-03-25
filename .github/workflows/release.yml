@@ -1,0 +1,226 @@
+name: 'Release'
+
+on:
+  workflow_dispatch:
+    inputs:
+      # Fill release/tag version
+      release-version:
+        description: "Release version [999.999.999]:"
+        required: true
+
+jobs:
+  slack_status_started:
+    runs-on: ubuntu-latest
+    env:
+      SLACK_CHANNEL: '#android-release'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Slack notification started
+        uses: ./.github/actions/slack-notify
+        with:
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          color: "#ffd500"
+          title-text: "started"
+
+  git_tag:
+    runs-on: ubuntu-latest
+    needs: [ slack_status_started ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Add git TAG
+        run: |
+          git config --local user.email "release@smartlook.com"
+          git config --local user.name "${{ github.actor }}"
+          git tag -a "${{ github.event.inputs.release-version }}" -m "${{ github.event.inputs.release-version }}"
+          git push --follow-tags
+
+  dry_build:
+    runs-on: ubuntu-latest
+    needs: [ git_tag ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'zulu'
+
+      - name: Gradle cache
+        uses: gradle/gradle-build-action@v2
+
+      - name: Dry build
+        uses: ./.github/actions/assemble
+
+  unit_tests:
+    runs-on: ubuntu-latest
+    needs: [ git_tag, dry_build ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'zulu'
+
+      - name: Gradle cache
+        uses: gradle/gradle-build-action@v2
+
+      - name: Run tests
+        uses: ./.github/actions/test-unit
+
+  prepare_release:
+    runs-on: ubuntu-latest
+    needs: [ dry_build, unit_tests, git_tag ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'zulu'
+
+      - name: Gradle cache
+        uses: gradle/gradle-build-action@v2
+
+      - name: Setup artifactory credentials
+        uses: ./.github/actions/setup-artifactory
+        with:
+          username: ${{ secrets.ARTIFACTORY_NAME }}
+          password: ${{ secrets.ARTIFACTORY_PASSWORD }}
+
+      - name: Release build
+        uses: ./.github/actions/release-native
+
+      - name: Save build artifacts
+        uses: ./.github/actions/save-artifacts
+
+  git_release:
+    runs-on: ubuntu-latest
+    needs: [ dry_build, unit_tests, prepare_release, git_tag ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Download all release artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: release-artifacts
+
+      - name: Zip artifacts
+        run: |
+          zip -r release.zip "./release-artifacts/output/com/smartlook/android"
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1.12.0
+        id: create_release
+        with:
+          draft: false
+          prerelease: false
+          name: ${{ github.event.inputs.release-version }}
+          tag: ${{ github.event.inputs.release-version }}
+          generateReleaseNotes: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Upload artifacts
+        uses: ./.github/actions/upload_github_artifacts
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+  publish_release_to_s3:
+    runs-on: ubuntu-latest
+    needs: [ dry_build, unit_tests, prepare_release, git_tag, git_release ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Download all release artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: release-artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Prepare files for upload to S3
+        uses: ./.github/actions/prepare-files-for-s3
+        with:
+          release-version: ${{ github.event.inputs.release-version }}
+
+      - name: Display structure of prepared files
+        run: ls -R
+
+      - name: Upload to S3
+        uses: ./.github/actions/publish_release_to_s3
+        with:
+          release-version: ${{ github.event.inputs.release-version }}
+          access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  slack_status:
+    runs-on: ubuntu-latest
+    needs: [ dry_build, unit_tests, prepare_release, git_release, git_tag, publish_release_to_s3 ]
+    if: always()
+    env:
+      SLACK_CHANNEL: '#android-release'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Slack git tag failure
+        if: (needs.git_tag.result == 'failure')
+        uses: ./.github/actions/slack-notify
+        with:
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          color: "#cc0000"
+          title-text: "failed when creating git tag"
+
+      - name: Slack notification failure
+        if: (needs.prepare_release.result == 'failure' || needs.dry_build.result == 'failure' || needs.unit_tests.result == 'failure' || needs.publish_release_to_s3.result == 'failure' || needs.git_release.result == 'failure')
+        uses: ./.github/actions/slack-notify
+        with:
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          color: "#cc0000"
+          title-text: "failed"
+
+      - name: Slack notification success
+        uses: ./.github/actions/slack-notify
+        if: (needs.prepare_release.result == 'success' && needs.dry_build.result == 'success' && needs.unit_tests.result == 'success' && needs.publish_release_to_s3.result == 'success' && needs.git_tag.result == 'success' && needs.git_release.result == 'success')
+        with:
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          color: "#8fce00"
+          title-text: "was successful"

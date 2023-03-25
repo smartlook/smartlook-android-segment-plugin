@@ -1,0 +1,22 @@
+name: 'Prepare release files for upload to S3'
+description: ''
+inputs:
+  release-version:
+    required: yes
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        declare -a modules=("smartlook-analytics-common-utils")
+        version=${{ inputs.release-version }}
+
+        ## Loop through the flavours and move artifacts to correct folders
+        for module in "${modules[@]}"
+        do
+            mkdir -p release/${module}/${version}
+            mkdir -p release/${module}/${version}-support
+
+            mv "release-artifacts/output/com/smartlook/android/${module}/${version}"/* "release/${module}/${version}"
+            mv "release-artifacts/output/com/smartlook/android/${module}/${version}-support"/* "release/${module}/${version}-support"
+        done
+      shell: bash
