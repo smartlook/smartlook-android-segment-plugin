@@ -8,7 +8,7 @@ afterEvaluate {
 
                 groupId "com.smartlook.android"
                 artifactId project.getMavenArtifactId()
-                version project.getMavenVersion()
+                version "${project.getMavenVersion()}${project.getVersionPostfix()}"
             }
         }
 

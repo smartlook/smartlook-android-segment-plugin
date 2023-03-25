@@ -25,8 +25,17 @@ ext.processMavenDependencies = { dependency, isApi, dependenciesNode, versionSuf
         def dependencyNode = dependenciesNode.appendNode("dependency")
         dependencyNode.appendNode("groupId", "com.smartlook.android")
         dependencyNode.appendNode("artifactId", dependency.dependencyProject.getMavenArtifactId())
-        dependencyNode.appendNode("version", dependency.dependencyProject.getMavenVersion() + versionSuffix)
+        dependencyNode.appendNode("version", dependency.dependencyProject.getMavenVersion() + dependency.dependencyProject.getVersionPostfix() + versionSuffix)
         dependencyNode.appendNode("scope", scope)
+    }
+}
+
+ext.getVersionPostfix = { existingPostfix = "" ->
+    if (rootProject.hasProperty("maven.deploy.artifactory.snapshot")) {
+        def postfix = rootProject.properties["maven.deploy.artifactory.snapshot"]
+        return "$existingPostfix-$postfix-TEST"
+    } else {
+        return existingPostfix
     }
 }
 
@@ -41,9 +50,9 @@ String.metaClass.toBoxString = { ->
 
 tasks.withType(AbstractPublishToMaven) {
     doLast {
-        def artifact =  "com.smartlook.android:" +
+        def artifact = "com.smartlook.android:" +
                 project.getMavenArtifactId() + ":" +
-                project.getMavenVersion()
+                project.getMavenVersion() + getVersionPostfix()
         println("╔══════════════════════════════════════════════════════════════════════════════════════════════════╗")
         println("published".toBoxString())
         println(artifact.toBoxString())
