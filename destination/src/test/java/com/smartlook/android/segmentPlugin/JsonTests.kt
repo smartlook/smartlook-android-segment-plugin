@@ -1,6 +1,5 @@
-package com.smartlook.sdk.segmentPlugin
+package com.smartlook.android.segmentPlugin
 
-import flatten
 import kotlinx.serialization.json.Json
 import org.junit.Assert
 import org.junit.Test
@@ -9,7 +8,8 @@ class JsonTests {
 
     @Test
     fun `test simple json element`() {
-        val input = Json.parseToJsonElement("""
+        val input = Json.parseToJsonElement(
+            """
             {
             	"integrations": {
             		"FooDestination": {
@@ -19,7 +19,8 @@ class JsonTests {
             		}
             	}
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         val expectedOutput = mapOf(
             "integrations_FooDestination_configA" to "true",
@@ -32,11 +33,13 @@ class JsonTests {
 
     @Test
     fun `test json element with array`() {
-        val input = Json.parseToJsonElement("""
+        val input = Json.parseToJsonElement(
+            """
            {
             	"integrations": [0, 1, 2]
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         val expectedOutput = mapOf(
             "integrations_0" to "0",
@@ -49,7 +52,8 @@ class JsonTests {
 
     @Test
     fun `test json element with array of objects`() {
-        val input = Json.parseToJsonElement("""
+        val input = Json.parseToJsonElement(
+            """
             {
             	"integrations": [{
             		"value": "0"
@@ -59,7 +63,8 @@ class JsonTests {
             		"value": "2"
             	}]
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         val expectedOutput = mapOf(
             "integrations_0_value" to "0",
@@ -72,7 +77,8 @@ class JsonTests {
 
     @Test
     fun `test array of objects`() {
-        val input = Json.parseToJsonElement("""
+        val input = Json.parseToJsonElement(
+            """
             [{
                 "value": "0"
             }, {
@@ -80,7 +86,8 @@ class JsonTests {
             }, {
                 "value": "2"
             }]
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         val expectedOutput = mapOf(
             "0_value" to "0",

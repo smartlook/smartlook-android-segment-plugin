@@ -1,3 +1,5 @@
+package com.smartlook.android.segmentPlugin
+
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin

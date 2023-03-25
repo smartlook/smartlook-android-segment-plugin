@@ -11,7 +11,7 @@ ext {
 }
 
 android {
-    namespace = "com.smartlook.sdk.segmentPlugin"
+    namespace = "com.smartlook.android.segmentPlugin"
     compileSdk = Configurations.Android.compileVersion
 
     defaultConfig {
@@ -25,7 +25,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
         }
     }
