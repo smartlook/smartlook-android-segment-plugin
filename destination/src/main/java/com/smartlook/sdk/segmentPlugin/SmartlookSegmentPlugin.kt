@@ -1,9 +1,6 @@
-import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.GroupEvent
-import com.segment.analytics.kotlin.core.IdentifyEvent
-import com.segment.analytics.kotlin.core.ScreenEvent
-import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.Plugin
 import com.smartlook.android.core.api.Smartlook
 import com.smartlook.android.core.api.model.Properties
 import kotlinx.serialization.json.JsonArray
@@ -11,9 +8,24 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
-class SmartlookSegmentPlugin : DestinationPlugin() {
+class SmartlookSegmentPlugin(
+    private val projectKey: String
+) : DestinationPlugin() {
+
+    init {
+        Smartlook.instance.preferences.projectKey = projectKey
+    }
 
     override val key: String = KEY
+
+    override fun update(settings: Settings, type: Plugin.UpdateType) {
+        super.update(settings, type)
+        if (type != Plugin.UpdateType.Initial) return
+
+        Smartlook.instance.preferences.eventTracking.navigation.disableAll()
+        Smartlook.instance.preferences.projectKey = projectKey
+        Smartlook.instance.start()
+    }
 
     override fun group(payload: GroupEvent): BaseEvent = payload
 
@@ -27,6 +39,11 @@ class SmartlookSegmentPlugin : DestinationPlugin() {
             }
         }
         return payload
+    }
+
+    override fun alias(payload: AliasEvent): BaseEvent? {
+        Smartlook.instance.user.properties.putString("aliasId", payload.userId)
+        return super.alias(payload)
     }
 
     override fun screen(payload: ScreenEvent): BaseEvent {
